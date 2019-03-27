@@ -24,3 +24,22 @@ on t2.trackid = tracks.id
 Set
 tracks.info = JSON_SET(IFNULL(tracks.info, JSON_OBJECT()),'$.fixed_genres',t2.fixed_genres),
 tracks.ext = JSON_SET(IFNULL(tracks.ext, JSON_OBJECT()),'$.fixed_genres_albumuuid',t2.albumid)
+
+-- Fixed lỗi chính tả cho GENRE: 
+
+Update artists
+Join(
+SELECT
+	id,
+	artists.info -> '$.fixed_genres',
+	REPLACE (artists.info -> '$.fixed_genres','Jaz','Jazz') as json_replace
+FROM
+	artists
+WHERE
+	Info ->> '$.fixed_genres' LIKE '%Jaz"%' 
+
+) as t1
+on t1.id = artists.id
+set 
+artists.info = JSON_SET(artists.info,'$.fixed_genres',cast(t1.json_replace as json))
+
