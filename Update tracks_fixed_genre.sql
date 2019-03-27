@@ -1,3 +1,5 @@
+-- Update tracks: 5532887 records
+
 Update tracks
 Join 
 (
