@@ -138,6 +138,37 @@ JOIN (
 ON t1.uuid = albums.uuid
 SET albums.info = JSON_SET (IFNULL(albums.info, JSON_OBJECT()),'$.fixed_genres',t1.artist_genre) -- 145.067
 
+-- Truong hop albums genre null
+UPDATE albums
+JOIN (
+	SELECT
+		albums.uuid,
+		albums.info ->> '$.fixed_genres' as album_genre,
+		artist_album.ArtistId,
+		cast(artists.Info ->> '$.fixed_genres' as Json) as artist_genre
+		
+	FROM
+		albums
+	JOIN artist_album ON artist_album.AlbumId = albums.Id
+	JOIN artists ON artists.Id = artist_album.artistid
+	AND artists.valid > 0
+	AND artists.Info ->> '$.fixed_genres' is not null
+	WHERE
+		albums.info ->> '$.fixed_genres' is null
+
+	AND (
+		albums.valid > 0
+		OR albums.valid = - 91
+	)
+	-- AND albums.uuid = '0011DE26568F4FA59C8A165A6C13D952'
+	GROUP BY
+		albums.UUID,
+		artists.Id
+) AS t1 
+ON t1.uuid = albums.uuid
+SET albums.info = JSON_SET (IFNULL(albums.info, JSON_OBJECT()),'$.fixed_genres',t1.artist_genre) -- 16.056
+
+
 
 
 
