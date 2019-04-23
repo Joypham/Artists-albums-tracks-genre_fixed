@@ -109,6 +109,34 @@ LENGTH(info ->> '$.fixed_genres') <> 12
 Set artists.info = t1.remove_poprock
 
 
+-- Fix genre album: truong hop chi co 1 subgenre = pop/rock
+UPDATE albums
+JOIN (
+	SELECT
+		albums.uuid,
+		albums.info ->> '$.fixed_genres' as album_genre,
+		artist_album.ArtistId,
+		cast(artists.Info ->> '$.fixed_genres' as Json) as artist_genre
+		
+	FROM
+		albums
+	JOIN artist_album ON artist_album.AlbumId = albums.Id
+	JOIN artists ON artists.Id = artist_album.artistid
+	AND artists.valid > 0
+	AND albums.info ->> '$.fixed_genres' <> artists.Info ->> '$.fixed_genres'
+	WHERE
+		albums.info ->> '$.fixed_genres' LIKE '%Pop/Rock%'
+	AND (
+		albums.valid > 0
+		OR albums.valid = - 91
+	)
+	-- AND albums.uuid = '0000DFFA23DF48DB81651F616A55BBB8'
+	GROUP BY
+		albums.UUID,
+		artists.Id
+) AS t1 
+ON t1.uuid = albums.uuid
+SET albums.info = JSON_SET (IFNULL(albums.info, JSON_OBJECT()),'$.fixed_genres',t1.artist_genre) -- 145.067
 
 
 
