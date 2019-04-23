@@ -44,3 +44,37 @@ having genres is not null
 on t1 .uuid = artists.uuid
 Set
 artists.info = JSON_SET(IFNULL(artists.info, JSON_OBJECT()),'$.fixed_genres',t1.genres)
+			
+-- Ngày 23.04.2019: Fixed_genres > 2 subgenre trong đó có ít nhất 1 subgenre = pop/rock => remove pop/rock 
+Step 1: Câu lệnh select 
+Select 
+name,
+uuid,
+Info ->> '$.allmusic.styles',
+info ->> '$.fixed_genres',
+genrematch.GenreName,
+Json_remove(info,Json_unquote(Json_search(info,'all','Pop/Rock','$'))),
+ROW_NUMBER () over (PARTITION BY artists.uuid ) as `Rankovertrack`,
+LENGTH(info ->> '$.fixed_genres')
+from artists
+
+left Join genrematch on 
+(SUBSTRING_INDEX(Info ->> '$.allmusic.styles',',',1) = genrematch.GenreName
+or
+SUBSTRING_INDEX(Info ->> '$.allmusic.styles',',',-1) = genrematch.GenreName
+or
+Info ->> '$.allmusic.styles' like CONCAT('%',',',genrematch.GenreName,',','%'))
+and genrematch.GenreName <> 'Pop/Rock'
+where 
+info ->> '$.fixed_genres' like '%Pop/Rock%'
+and 
+Info ->> '$.allmusic.styles' is not null 
+and 
+Info ->> '$.allmusic.styles' not like '%null%'
+and
+LENGTH(info ->> '$.fixed_genres') > 12
+-- Step 2: câu lệnh update: 
+
+
+
+
